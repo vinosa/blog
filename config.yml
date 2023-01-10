@@ -1,0 +1,4 @@
+baseURL: 'https://vinosa.github.io/blog'
+languageCode: 'en-us'
+title: 'Blog'
+theme: "PaperMod"
