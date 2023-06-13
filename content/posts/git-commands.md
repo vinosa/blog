@@ -52,10 +52,23 @@ git reset HEAD myfile
 
 ## Rewrite History
 
-### Rebase
+### Interactive Rebase
 
 ```
 git rebase -i master
+git rebase -i <sha1>
+git rebase -i HEAD~3
+git rebase --continue
+```
+
+### Edit past commit
+```
+git rebase -i <sha1>
+
+edit <sha1>
+
+git commit --amend
+
 git rebase --continue
 ```
 
@@ -79,6 +92,12 @@ git commit --amend
 
 ```
 git rev-parse HEAD | cut -c 1-8
+```
+
+### Cancel commit (creates opposite commit)
+
+```
+git revert <sha1> 
 ```
 
 ### Change git user
@@ -121,6 +140,23 @@ gitk --all // include orphans
 git reflog
 ```
 
+### History details (N last commits)
+```
+git log -p -<N>
+```
+### Code evolution
+```
+git diff <sha1 / ref>
+git diff <sha1> <sha1>
+git diff HEAD^
+git diff HEAD~<N>
+```
+
+### Who did it
+```
+git blame -L [start],[stop] [file]
+git blame -L [start],+<N> [file]
+```
 
 ## Rebase/Reset
 
