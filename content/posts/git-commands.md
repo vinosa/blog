@@ -81,6 +81,12 @@ git commit --amend
 git rev-parse HEAD | cut -c 1-8
 ```
 
+### Change git user
+
+```
+git commit --amend --date=now --author="John Doe <john.doe@yes.com>" --no-edit
+```
+
 ## Repository
 
 ### Set Remote to SSH
@@ -107,5 +113,29 @@ git show
 
 ```
 git log --oneline --all --graph
+gitk --all // include orphans
+```
+
+### HEAD reference logging
+```
+git reflog
+```
+
+
+## Rebase/Reset
+
+### Cancel rebase/reset
+
+```
+git reset --hard ORIG_HEAD
+```
+
+### Moving branch reference/HEAD back / revert wrong merge
+
+```
+git reset --hard HEAD^ // ex. after wrong merge
+git reset --hard HEAD~2
+git reset --hard sha1 // after wrong reset
+git reset --hard tag
 ```
 
