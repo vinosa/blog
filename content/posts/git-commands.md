@@ -175,3 +175,53 @@ git reset --hard sha1 // after wrong reset
 git reset --hard tag
 ```
 
+## Configuration
+
+### Change hooks path
+
+```
+git config core.hooksPath <hooks_path>
+```
+
+### Init hooks
+
+```
+git init --template=<template_dir> // template_dir must have hooks folder
+
+git clone --template=<template_dir>
+```
+
+## Submodules
+
+### Add
+```
+git submodule add <url> <local-path>
+```
+
+### Clone
+```
+git clone <depot>
+git submodule init
+git submodule update
+```
+or
+```
+git clone --recurse-submodules <depot>
+``` 
+
+### Check
+```
+git diff --caches --submodule
+```
+
+### Pull rebase policy
+```
+git submodule update --remote --rebase
+```
+### Push super repository with submodules
+```
+git push --recurse-submodules=check
+```
+
+
+
