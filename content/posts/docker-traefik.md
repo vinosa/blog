@@ -2,6 +2,7 @@
 title: "Docker Traefik"
 date: 2023-07-28T10:09:50+02:00
 draft: true
+categories:
 - Development
 - Docker
 - Traefik
