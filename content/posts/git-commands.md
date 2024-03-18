@@ -106,6 +106,18 @@ git revert <sha1>
 git commit --amend --date=now --author="John Doe <john.doe@yes.com>" --no-edit
 ```
 
+### Cancel last commit/commit amend (points branch  to the previous commit)
+
+```
+git reset --soft HEAD@{1}
+```
+
+### Revert file to specific commit
+
+```
+git checkout commmit_hash --  path/to/file
+```
+
 ## Repository
 
 ### Set Remote to SSH
