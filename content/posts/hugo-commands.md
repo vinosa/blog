@@ -9,11 +9,33 @@ tags:
 - dev
 - hugo
 ---
+### Install
+```
+snap install hugo --channel=extended
+
+or 
+
+sudo apt-get install hugo
+```
+
+### Test installation
+
+```
+hugo help 
+```
 ### Create new site
 
 ```
 hugo new site <site> -f yml
 hugo new site --force . // in existing repository folder
+```
+
+### Add a new theme
+
+```
+cd quickstart
+git init
+git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
 ```
 
 ### Add some content
@@ -38,5 +60,16 @@ hugo server -D  --navigateToChanged // http://localhost:1313/
 
 ```
 hugo
+```
+### Force Stop server
+
+```
+ killall -9 hugo
+```
+
+### Build static pages
+
+```
+hugo -D
 ```
 
