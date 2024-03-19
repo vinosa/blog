@@ -26,7 +26,19 @@ docker-machine ip default
 ### IP ranges
 
 ```
-docker inspect my_container | grep IPv4Address
+docker inspect <container> | grep IPv4Address
+```
+
+```
+vi /etc/docker/daemon.json
+{
+  "default-address-pools" : [
+    {
+      "base" : "172.240.0.0/16",
+      "size" : 24
+    }
+  ]
+}
 ```
 
 ## Shell
@@ -34,8 +46,8 @@ docker inspect my_container | grep IPv4Address
 ### Container Shell
 _Ctrl + D for exit_
 ```
-docker exec -it <mycontainer> bash
-docker exec -it <mycontainer> sh
+docker exec -it <container> bash
+docker exec -it <container> sh
 ```
 
 ## Containers
@@ -48,20 +60,28 @@ docker ps
 
 ### Print Env Vars
 ```
-docker exec my_container printenv
+docker exec <container> printenv
+docker exec <container>  /usr/bin/env
 ```
 
 ### Logs
 ```
-docker logs -f --details my_container
+docker logs -f --details <container>
 ```
 
 ## Images
 
+### List
+
+```
+docker images
+```
+
 ### Run Image
 ```
-docker run -p 13000:8080 my_image
+docker run -p 13000:8080 <image>
 ```
+
 
 ## Resources
 
@@ -77,17 +97,20 @@ docker system prune -a
 
 ### MySQL Backup 
 ```
-docker exec my_container /usr/bin/mysqldump -u root --password=root my_database > backup.sql
+docker exec <container> /usr/bin/mysqldump -u root --password=root my_database > backup.sql
 ```
 
 ### MySQL restore
 ```
-cat backup.sql | docker exec -i my_container /usr/bin/mysql -u root --password=root my_database
+cat backup.sql | docker exec -i <container> /usr/bin/mysql -u root --password=root my_database
+
+docker exec -i [mysql_container_name] mysql -u[username] -p[password] [DB name] < [path/to/sql/file]
 ```
 
 ## Dockerfile
 
 ### Build
 ```
-docker build -t my_image .
+docker build -t <image> .
+docker build -t <image> -f Dockerfile-tasks .
 ```
