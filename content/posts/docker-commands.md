@@ -65,10 +65,19 @@ docker exec -it <container> sh
 
 ## Containers
 
+### Create/run container
+
+```
+docker container run --publish 80:80 --detach --name <container> <image>
+docker container run -it --name ubuntu_14 -d ubuntu:14.04
+docker run  -d -p 3306:3306 --name mybd --env "MYSQL_RANDOM_ROOT_PASSWORD=yes"  mysql
+```
+
 ### List containers
 
 ```
 docker ps
+docker ls -a
 ```
 
 ### Print Env Vars
@@ -93,6 +102,26 @@ docker images
 ### Run Image
 ```
 docker run -p 13000:8080 <image>
+```
+
+### Image Layers
+```
+docker image history <image>
+```
+
+### Inspect
+```
+docker image inspect <image>
+```
+
+### Publishing
+```
+docker image tag <image-source:tag> <vendor/image-target:tag>
+docker image ls
+docker login     
+cat .docker/config.json
+docker image push <image>
+docker logout
 ```
 
 
@@ -126,4 +155,27 @@ docker exec -i [mysql_container_name] mysql -u[username] -p[password] [DB name] 
 ```
 docker build -t <image> .
 docker build -t <image> -f Dockerfile-tasks .
+```
+
+## Network
+```
+docker network ls
+docker network inspect <network>
+```
+
+### Container info
+```
+docker container port  <container> 
+docker container inspect --format '{{.NetworkSettings.IpAddress}}' <container>
+```
+
+### Custom network
+```
+docker network create <network>
+docker container run --name <container> --network <network> -d <container>
+```
+
+```
+docker network connect <network> <container>
+docker network disconnect <network> <container>
 ```
