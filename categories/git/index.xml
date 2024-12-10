@@ -1,1 +1,44 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Git on Blog</title><link>https://vinosa.github.io/blog/categories/git/</link><description>Recent content in Git on Blog</description><generator>Hugo -- 0.132.0</generator><language>en-us</language><lastBuildDate>Thu, 15 Jun 2023 14:49:22 +0200</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/git/index.xml" rel="self" type="application/rss+xml"/><item><title>Git Troubleshooting</title><link>https://vinosa.github.io/blog/posts/git-troubleshooting/</link><pubDate>Thu, 15 Jun 2023 14:49:22 +0200</pubDate><guid>https://vinosa.github.io/blog/posts/git-troubleshooting/</guid><description>fatal: transport &amp;lsquo;file&amp;rsquo; not allowed git config --global protocol.file.allow always</description></item><item><title>Git Tips</title><link>https://vinosa.github.io/blog/posts/git-tips/</link><pubDate>Tue, 13 Jun 2023 14:43:15 +0200</pubDate><guid>https://vinosa.github.io/blog/posts/git-tips/</guid><description>Move last 2 commits from master to develop git checkout master git branch -d develop git log git reset --hard HEAD~2 git checkout &amp;lt;sha1_of_last_orphan_commit&amp;gt; git checkout -b develop Correct master branched to develop git checkout develop git log git reset --hard HEAD~1 git checkout master git reset --hard &amp;lt;sha1_orphan_merge_commit&amp;gt; git comit --amend // rename commit Search bugged commit git bisect start // define borders git bisect good [ref] // bug is not present git bisect bad [ref] // bug is present git bisect good/bad // if bug is present .</description></item><item><title>Git Commands</title><link>https://vinosa.github.io/blog/posts/git-commands/</link><pubDate>Tue, 31 Jan 2023 09:28:24 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/git-commands/</guid><description>Some Git commands</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Git on Blog</title><link>https://vinosa.github.io/blog/categories/git/</link><description>Recent content in Git on Blog</description><generator>Hugo -- 0.139.4</generator><language>en-us</language><lastBuildDate>Thu, 15 Jun 2023 14:49:22 +0200</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/git/index.xml" rel="self" type="application/rss+xml"/><item><title>Git Troubleshooting</title><link>https://vinosa.github.io/blog/posts/git-troubleshooting/</link><pubDate>Thu, 15 Jun 2023 14:49:22 +0200</pubDate><guid>https://vinosa.github.io/blog/posts/git-troubleshooting/</guid><description>&lt;h3 id="fatal-transport-file-not-allowed">fatal: transport &amp;lsquo;file&amp;rsquo; not allowed&lt;/h3>
+&lt;pre tabindex="0">&lt;code>git config --global protocol.file.allow always
+&lt;/code>&lt;/pre></description></item><item><title>Git Tips</title><link>https://vinosa.github.io/blog/posts/git-tips/</link><pubDate>Tue, 13 Jun 2023 14:43:15 +0200</pubDate><guid>https://vinosa.github.io/blog/posts/git-tips/</guid><description>&lt;h3 id="move-last-2-commits-from-master-to-develop">Move last 2 commits from master to develop&lt;/h3>
+&lt;pre tabindex="0">&lt;code>git checkout master
+git branch -d develop
+git log
+git reset --hard HEAD~2
+git checkout &amp;lt;sha1_of_last_orphan_commit&amp;gt;
+git checkout -b develop
+&lt;/code>&lt;/pre>&lt;h3 id="correct-master-branched-to-develop">Correct master branched to develop&lt;/h3>
+&lt;pre tabindex="0">&lt;code>git checkout develop
+git log
+git reset --hard HEAD~1
+git checkout master
+git reset --hard &amp;lt;sha1_orphan_merge_commit&amp;gt;
+git comit --amend // rename commit
+&lt;/code>&lt;/pre>&lt;h3 id="search-bugged-commit">Search bugged commit&lt;/h3>
+&lt;pre tabindex="0">&lt;code>git bisect start
+// define borders
+git bisect good [ref] // bug is not present
+git bisect bad [ref] // bug is present
+git bisect good/bad // if bug is present
+...
+or
+git bisect run ./test.sh (script returns 0 for good, or anything else for bad)
+git bisect reset
+&lt;/code>&lt;/pre>&lt;h3 id="init-server-repository">Init server repository&lt;/h3>
+&lt;pre tabindex="0">&lt;code>git init --bare
+&lt;/code>&lt;/pre>&lt;h2 id="hooks">Hooks&lt;/h2>
+&lt;h3 id="local">Local&lt;/h3>
+&lt;ul>
+&lt;li>pre-commit&lt;/li>
+&lt;li>prepare-commit-msg&lt;/li>
+&lt;li>commit-msg&lt;/li>
+&lt;li>post-commit&lt;/li>
+&lt;li>post-checkout&lt;/li>
+&lt;li>pre-rebase&lt;/li>
+&lt;/ul>
+&lt;h3 id="server">Server&lt;/h3>
+&lt;ul>
+&lt;li>pre-receive // on push&lt;/li>
+&lt;li>update&lt;/li>
+&lt;li>post-receive // notification, ci etc&lt;/li>
+&lt;/ul></description></item><item><title>Git Commands</title><link>https://vinosa.github.io/blog/posts/git-commands/</link><pubDate>Tue, 31 Jan 2023 09:28:24 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/git-commands/</guid><description>Some Git commands</description></item></channel></rss>

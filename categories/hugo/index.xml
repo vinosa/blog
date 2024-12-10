@@ -1,5 +1,85 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Hugo on Blog</title><link>https://vinosa.github.io/blog/categories/hugo/</link><description>Recent content in Hugo on Blog</description><generator>Hugo -- 0.132.0</generator><language>en-us</language><lastBuildDate>Tue, 19 Mar 2024 11:31:59 +0100</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/hugo/index.xml" rel="self" type="application/rss+xml"/><item><title>Hugo Templating</title><link>https://vinosa.github.io/blog/posts/hugo-templating/</link><pubDate>Tue, 19 Mar 2024 11:31:59 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-templating/</guid><description>Common layout in baseof.html :
-{{ block &amp;#34;main&amp;#34; . }} {{end}} In single.html or list.html :
-{{define &amp;#34;main&amp;#34; }} bla bla {{end}} Variables &amp;lt;title&amp;gt;{{ .Title } {.Content}&amp;lt;/title&amp;gt; Custom variables {{ $address := &amp;#34;123 Main St.&amp;#34; }} {{ $address }} Including partial templates {{ partial &amp;#34;header.html&amp;#34; . }} Foreach {{ range $elem_index, $elem_val := $array }} {{ $elem_index }} -- {{ $elem_val }} {{ end }} {{ range $elem_key, $elem_val := $map }} {{ $elem_key }} -- {{ $elem_val }} {{ end }} With (if exists) {{ with .</description></item><item><title>Hugo Shortcodes</title><link>https://vinosa.github.io/blog/posts/hugo-shortcodes/</link><pubDate>Tue, 19 Mar 2024 11:24:31 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-shortcodes/</guid><description>HTML snippets https://gohugo.io/content-management/shortcodes/
-Youtube {{&amp;lt; youtube 2xkNJL4gJ9E &amp;gt;}} Custom shortcodes layouts/shortcodes/myshortcode.html
-{{&amp;lt; myshortcode &amp;gt;}}</description></item><item><title>Hugo Files</title><link>https://vinosa.github.io/blog/posts/hugo-files/</link><pubDate>Tue, 19 Mar 2024 11:23:16 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-files/</guid><description>List &amp;amp; single template layouts/_default/list.html / single.html Home page layouts/index.html Common layout layouts/_default/baseof.html Section templates layouts/mysection/single.html // mysection same directory name as in content Data files data/states.json</description></item><item><title>Hugo Commands</title><link>https://vinosa.github.io/blog/posts/hugo-commands/</link><pubDate>Tue, 19 Mar 2024 11:20:16 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-commands/</guid><description>Install snap install hugo --channel=extended or sudo apt-get install hugo Test installation hugo help Create new site hugo new site &amp;lt;site&amp;gt; -f yml hugo new site --force . // in existing repository folder Add a new theme cd quickstart git init git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke Add some content hugo new posts/my-first-post.md Add folder root hugo new notes/history/_index.md Start Hugo Server (with drafts enabled) hugo server -D --navigateToChanged // http://localhost:1313/ Deploy (to public folder) hugo Force Stop server killall -9 hugo Build static pages hugo -D</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Hugo on Blog</title><link>https://vinosa.github.io/blog/categories/hugo/</link><description>Recent content in Hugo on Blog</description><generator>Hugo -- 0.139.4</generator><language>en-us</language><lastBuildDate>Tue, 19 Mar 2024 11:31:59 +0100</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/hugo/index.xml" rel="self" type="application/rss+xml"/><item><title>Hugo Templating</title><link>https://vinosa.github.io/blog/posts/hugo-templating/</link><pubDate>Tue, 19 Mar 2024 11:31:59 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-templating/</guid><description>&lt;h3 id="common-layout">Common layout&lt;/h3>
+&lt;p>in baseof.html :&lt;/p>
+&lt;pre tabindex="0">&lt;code>{{ block &amp;#34;main&amp;#34; . }}
+{{end}}
+&lt;/code>&lt;/pre>&lt;p>In single.html or list.html :&lt;/p>
+&lt;pre tabindex="0">&lt;code>{{define &amp;#34;main&amp;#34; }}
+bla bla
+{{end}}
+&lt;/code>&lt;/pre>&lt;h3 id="variables">Variables&lt;/h3>
+&lt;pre tabindex="0">&lt;code>&amp;lt;title&amp;gt;{{ .Title } {.Content}&amp;lt;/title&amp;gt;
+&lt;/code>&lt;/pre>&lt;h3 id="custom-variables">Custom variables&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{ $address := &amp;#34;123 Main St.&amp;#34; }}
+{{ $address }}
+&lt;/code>&lt;/pre>&lt;h3 id="including-partial-templates">Including partial templates&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{ partial &amp;#34;header.html&amp;#34; . }}
+&lt;/code>&lt;/pre>&lt;h3 id="foreach">Foreach&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{ range $elem_index, $elem_val := $array }}
+{{ $elem_index }} -- {{ $elem_val }}
+{{ end }}
+{{ range $elem_key, $elem_val := $map }}
+{{ $elem_key }} -- {{ $elem_val }}
+{{ end }}
+&lt;/code>&lt;/pre>&lt;h3 id="with-if-exists">With (if exists)&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{ with .Params.title }}
+&amp;lt;h4&amp;gt;{{ . }}&amp;lt;/h4&amp;gt;
+{{ else }}
+{{ .Summary }}
+{{ end }}
+&lt;/code>&lt;/pre>&lt;h3 id="global-context">Global context&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{ $title := .Site.Title }}
+&amp;lt;ul&amp;gt;
+{{ range .Params.tags }}
+&amp;lt;li&amp;gt;
+&amp;lt;a href=&amp;#34;/tags/{{ . | urlize }}&amp;#34;&amp;gt;{{ . }}&amp;lt;/a&amp;gt;
+- {{ $.Site.Title }}
+&amp;lt;/li&amp;gt;
+{{ end }}
+&amp;lt;/ul&amp;gt;
+&lt;/code>&lt;/pre>&lt;h3 id="removing-white-space">Removing white space&lt;/h3>
+&lt;pre tabindex="0">&lt;code>&amp;lt;div&amp;gt;
+{{- .Title -}}
+&amp;lt;/div&amp;gt;
+&lt;/code>&lt;/pre></description></item><item><title>Hugo Shortcodes</title><link>https://vinosa.github.io/blog/posts/hugo-shortcodes/</link><pubDate>Tue, 19 Mar 2024 11:24:31 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-shortcodes/</guid><description>&lt;h3 id="html-snippets">HTML snippets&lt;/h3>
+&lt;p>&lt;a href="https://gohugo.io/content-management/shortcodes/">https://gohugo.io/content-management/shortcodes/&lt;/a>&lt;/p>
+&lt;h3 id="youtube">Youtube&lt;/h3>
+&lt;pre tabindex="0">&lt;code>{{&amp;lt; youtube 2xkNJL4gJ9E &amp;gt;}}
+&lt;/code>&lt;/pre>&lt;h3 id="custom-shortcodes">Custom shortcodes&lt;/h3>
+&lt;p>layouts/shortcodes/myshortcode.html&lt;/p>
+&lt;pre tabindex="0">&lt;code>{{&amp;lt; myshortcode &amp;gt;}}
+&lt;/code>&lt;/pre></description></item><item><title>Hugo Files</title><link>https://vinosa.github.io/blog/posts/hugo-files/</link><pubDate>Tue, 19 Mar 2024 11:23:16 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-files/</guid><description>&lt;h3 id="list--single-template">List &amp;amp; single template&lt;/h3>
+&lt;pre tabindex="0">&lt;code>layouts/_default/list.html / single.html
+&lt;/code>&lt;/pre>&lt;h3 id="home-page">Home page&lt;/h3>
+&lt;pre tabindex="0">&lt;code>layouts/index.html
+&lt;/code>&lt;/pre>&lt;h3 id="common-layout">Common layout&lt;/h3>
+&lt;pre tabindex="0">&lt;code>layouts/_default/baseof.html
+&lt;/code>&lt;/pre>&lt;h3 id="section-templates">Section templates&lt;/h3>
+&lt;pre tabindex="0">&lt;code>layouts/mysection/single.html // mysection same directory name as in content
+&lt;/code>&lt;/pre>&lt;h3 id="data-files">Data files&lt;/h3>
+&lt;pre tabindex="0">&lt;code>data/states.json
+&lt;/code>&lt;/pre></description></item><item><title>Hugo Commands</title><link>https://vinosa.github.io/blog/posts/hugo-commands/</link><pubDate>Tue, 19 Mar 2024 11:20:16 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/hugo-commands/</guid><description>&lt;h3 id="install">Install&lt;/h3>
+&lt;pre tabindex="0">&lt;code>snap install hugo --channel=extended
+or
+sudo apt-get install hugo
+&lt;/code>&lt;/pre>&lt;h3 id="test-installation">Test installation&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo help
+&lt;/code>&lt;/pre>&lt;h3 id="create-new-site">Create new site&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo new site &amp;lt;site&amp;gt; -f yml
+hugo new site --force . // in existing repository folder
+&lt;/code>&lt;/pre>&lt;h3 id="add-a-new-theme">Add a new theme&lt;/h3>
+&lt;pre tabindex="0">&lt;code>cd quickstart
+git init
+git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+&lt;/code>&lt;/pre>&lt;h3 id="add-some-content">Add some content&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo new posts/my-first-post.md
+&lt;/code>&lt;/pre>&lt;h3 id="add-folder-root">Add folder root&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo new notes/history/_index.md
+&lt;/code>&lt;/pre>&lt;h3 id="start-hugo-server-with-drafts-enabled">Start Hugo Server (with drafts enabled)&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo server -D --navigateToChanged // http://localhost:1313/
+&lt;/code>&lt;/pre>&lt;h3 id="deploy-to-public-folder">Deploy (to public folder)&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo
+&lt;/code>&lt;/pre>&lt;h3 id="force-stop-server">Force Stop server&lt;/h3>
+&lt;pre tabindex="0">&lt;code> killall -9 hugo
+&lt;/code>&lt;/pre>&lt;h3 id="build-static-pages">Build static pages&lt;/h3>
+&lt;pre tabindex="0">&lt;code>hugo -D
+&lt;/code>&lt;/pre></description></item></channel></rss>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Symfony on Blog</title><link>https://vinosa.github.io/blog/categories/symfony/</link><description>Recent content in Symfony on Blog</description><generator>Hugo -- 0.139.4</generator><language>en-us</language><lastBuildDate>Tue, 10 Dec 2024 14:26:42 +0100</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/symfony/index.xml" rel="self" type="application/rss+xml"/><item><title>My Doctrine Design Patterns</title><link>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</link><pubDate>Tue, 10 Dec 2024 14:26:42 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</guid><description>&lt;h1 id="my-custom-doctrine-design-patterns">My custom Doctrine Design Patterns&lt;/h1>
+&lt;h2 id="entity-workflow-control-with-decorators">Entity workflow control with Decorators&lt;/h2>
+&lt;h3 id="orm-entity">ORM entity&lt;/h3>
+&lt;pre tabindex="0">&lt;code>use Doctrine\ORM\EntityManagerInterface;
+class PostEntity implements Post
+{
+public function save(EntityManagerInterface $entityManager): Post
+{
+$entityManager-&amp;gt;persist($this-&amp;gt;entity());
+$entityManager-&amp;gt;flush();
+return $this-&amp;gt;act();
+}
+public function entity(): PostEntity
+{
+return $this;
+}
+public function act(): Post
+{
+return new Done($this);
+}
+}
+&lt;/code>&lt;/pre>&lt;h3 id="workflow-state-decorator">Workflow State Decorator&lt;/h3>
+&lt;pre tabindex="0">&lt;code>
+class Approved implements Post
+{
+private $origin;
+public function __construct(
+Post $origin
+) {
+$this-&amp;gt;origin = $origin;
+}
+public function save(EntityManagerInterface $entityManager): Post
+{
+$entityManager-&amp;gt;persist($this-&amp;gt;entity());
+$entityManager-&amp;gt;flush();
+return $this-&amp;gt;act();
+}
+public function entity(): PostEntity
+{
+return $this-&amp;gt;origin-&amp;gt;entity()-&amp;gt;approved();
+}
+public function act(): Post
+{
+$this-&amp;gt;origin-&amp;gt;act();
+/**
+* new state subsequent workflow code
+*/
+return new Done($this);
+}
+}
+&lt;/code>&lt;/pre>&lt;h3 id="disabling-decorator-ensures-workflow-is-ran-only-once-by-an-object">&amp;lsquo;Disabling&amp;rsquo; decorator (ensures workflow is ran only once by an object)&lt;/h3>
+&lt;pre tabindex="0">&lt;code>
+class Done implements Post
+{
+private $origin;
+public function __construct(
+Post $origin
+) {
+$this-&amp;gt;origin = $origin;
+}
+public function save(EntityManagerInterface $entityManager): Post
+{
+return $this;
+}
+public function entity(): PostEntity
+{
+return $this-&amp;gt;origin-&amp;gt;entity();
+}
+public function act(): Post
+{
+return $this;
+}
+}
+&lt;/code>&lt;/pre>&lt;h2 id="entities-filtering-from-database-or-memory">Entities filtering from database or memory&lt;/h2>
+&lt;h3 id="filter-class">Filter class&lt;/h3>
+&lt;pre tabindex="0">&lt;code>use Doctrine\ORM\QueryBuilder;
+class Approved implements Filter
+{
+public function query(QueryBuilder $queryBuilder): QueryBuilder
+{
+return $queryBuilder
+-&amp;gt;andWhere(&amp;#39;p.status = :status&amp;#39;)
+-&amp;gt;setParameter(&amp;#39;status&amp;#39;, (new PostStatuses())-&amp;gt;approved() );
+}
+public function item(Post $item): bool
+{
+return $item-&amp;gt;entity()-&amp;gt;isApproved();
+}
+}
+&lt;/code>&lt;/pre>&lt;h3 id="array-entities-source">Array entities source&lt;/h3>
+&lt;pre tabindex="0">&lt;code>
+class ArrayPosts implements Posts
+{
+private $items;
+private $filters;
+public function __construct(
+array $items
+) {
+$this-&amp;gt;items = $items;
+$this-&amp;gt;filters = [];
+}
+public function toArray(): array
+{
+return array_filter(
+$this-&amp;gt;items,
+function (Post $item)
+{
+return array_reduce(
+$this-&amp;gt;filters,
+function(bool $take, Filter $filter) use ($item)
+{
+return $take &amp;amp;&amp;amp; $filter-&amp;gt;item($item);
+},
+true
+);
+}
+);
+}
+public function filter(Filter $filter): Posts
+{
+$new = clone $this;
+$new-&amp;gt;filters[] = $filter;
+return $new;
+}
+}
+&lt;/code>&lt;/pre>&lt;h3 id="database-entities-source">Database entities source&lt;/h3>
+&lt;pre tabindex="0">&lt;code>
+class DatabasePosts implements Posts
+{
+private $entityManager;
+private $filters;
+public function __construct(
+EntityManagerInterface $entityManagerInterface
+) {
+$this-&amp;gt;entityManager = $entityManagerInterface;
+$this-&amp;gt;filters = [];
+}
+public function toArray(): array
+{
+$qb = $this-&amp;gt;entityManager-&amp;gt;createQueryBuilder();
+$qb-&amp;gt;select(&amp;#39;p&amp;#39;)-&amp;gt;from(PostEntity::class, &amp;#39;p&amp;#39;);
+$qb = array_reduce(
+$this-&amp;gt;filters,
+function (QueryBuilder $queryBuilder, Filter $filter) {
+return $filter-&amp;gt;query($queryBuilder);
+},
+$qb
+);
+return $qb
+-&amp;gt;getQuery()
+-&amp;gt;getResult();
+}
+public function filter(Filter $filter): Posts
+{
+$new = clone $this;
+$new-&amp;gt;filters[] = $filter;
+return $new;
+}
+}
+&lt;/code>&lt;/pre></description></item></channel></rss>

@@ -1,0 +1,552 @@
+<!doctype html><html lang=en dir=auto><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>My Doctrine Design Patterns | Blog</title>
+<meta name=keywords content="dev,doctrine,symfony"><meta name=description content="My custom Doctrine Design Patterns
+Entity workflow control with Decorators
+ORM entity
+use Doctrine\ORM\EntityManagerInterface;
+
+class PostEntity implements Post
+{
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager->persist($this->entity());
+        $entityManager->flush();
+
+        return $this->act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this;
+    }
+
+    public function act(): Post
+    {        
+        return new Done($this);
+    }
+}
+Workflow State Decorator
+
+class Approved implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this->origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager->persist($this->entity());
+        $entityManager->flush();
+
+        return $this->act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this->origin->entity()->approved();
+    }
+
+    public function act(): Post
+    {
+        $this->origin->act();
+        /**
+        * new state subsequent workflow code
+        */
+
+        return new Done($this);
+    }
+}
+&lsquo;Disabling&rsquo; decorator (ensures workflow is ran only once by an object)
+
+class Done implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this->origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        return $this;
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this->origin->entity();
+    }
+
+    public function act(): Post
+    {
+        return $this;
+    }
+}
+Entities filtering from database or memory
+Filter class
+use Doctrine\ORM\QueryBuilder;
+
+class Approved implements Filter
+{
+    public function query(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder
+            ->andWhere('p.status = :status')
+            ->setParameter('status', (new PostStatuses())->approved() );
+    }
+
+    public function item(Post $item): bool
+    {
+        return $item->entity()->isApproved();
+    }
+}
+Array entities source
+
+class ArrayPosts implements Posts
+{
+    private $items;
+    private $filters;
+
+    public function __construct(
+        array $items
+    ) {
+       $this->items = $items; 
+       $this->filters = [];
+    }
+
+    public function toArray(): array
+    {
+        return array_filter(
+            $this->items,
+            function (Post $item)
+            {
+                return array_reduce(
+                    $this->filters,
+                    function(bool $take, Filter $filter) use ($item)
+                    {
+                        return $take && $filter->item($item);
+                    },
+                    true
+                );
+            }
+        );
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new->filters[] = $filter;
+
+        return $new;
+    }
+}
+Database entities source
+
+class DatabasePosts implements Posts
+{
+    private $entityManager;
+    private $filters;
+
+    public function __construct(
+        EntityManagerInterface $entityManagerInterface
+    ) {
+       $this->entityManager = $entityManagerInterface; 
+       $this->filters = [];
+    }
+
+    public function toArray(): array
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('p')->from(PostEntity::class, 'p');
+
+        $qb = array_reduce(
+            $this->filters,
+            function (QueryBuilder $queryBuilder, Filter $filter) {
+                return $filter->query($queryBuilder);
+            },
+            $qb
+        );
+
+        return $qb
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new->filters[] = $filter;
+
+        return $new;
+    }
+}
+"><meta name=author content><link rel=canonical href=https://vinosa.github.io/blog/posts/doctrine-design-patterns/><link crossorigin=anonymous href=/blog/assets/css/stylesheet.d6fcd20a4fb86efa4dfac8ec95da60244cc8871042183da1ef28e3a762ad79c8.css integrity="sha256-1vzSCk+4bvpN+sjsldpgJEzIhxBCGD2h7yjjp2Ktecg=" rel="preload stylesheet" as=style><link rel=icon href=https://vinosa.github.io/blog/favicon.ico><link rel=icon type=image/png sizes=16x16 href=https://vinosa.github.io/blog/favicon-16x16.png><link rel=icon type=image/png sizes=32x32 href=https://vinosa.github.io/blog/favicon-32x32.png><link rel=apple-touch-icon href=https://vinosa.github.io/blog/apple-touch-icon.png><link rel=mask-icon href=https://vinosa.github.io/blog/safari-pinned-tab.svg><meta name=theme-color content="#2e2e33"><meta name=msapplication-TileColor content="#2e2e33"><link rel=alternate hreflang=en href=https://vinosa.github.io/blog/posts/doctrine-design-patterns/><noscript><style>#theme-toggle,.top-link{display:none}</style><style>@media(prefers-color-scheme:dark){:root{--theme:rgb(29, 30, 32);--entry:rgb(46, 46, 51);--primary:rgb(218, 218, 219);--secondary:rgb(155, 156, 157);--tertiary:rgb(65, 66, 68);--content:rgb(196, 196, 197);--code-block-bg:rgb(46, 46, 51);--code-bg:rgb(55, 56, 62);--border:rgb(51, 51, 51)}.list{background:var(--theme)}.list:not(.dark)::-webkit-scrollbar-track{background:0 0}.list:not(.dark)::-webkit-scrollbar-thumb{border-color:var(--theme)}}</style></noscript><meta property="og:url" content="https://vinosa.github.io/blog/posts/doctrine-design-patterns/"><meta property="og:site_name" content="Blog"><meta property="og:title" content="My Doctrine Design Patterns"><meta property="og:description" content="My custom Doctrine Design Patterns Entity workflow control with Decorators ORM entity use Doctrine\ORM\EntityManagerInterface; class PostEntity implements Post { public function save(EntityManagerInterface $entityManager): Post { $entityManager->persist($this->entity()); $entityManager->flush(); return $this->act(); } public function entity(): PostEntity { return $this; } public function act(): Post { return new Done($this); } } Workflow State Decorator class Approved implements Post { private $origin; public function __construct( Post $origin ) { $this->origin = $origin; } public function save(EntityManagerInterface $entityManager): Post { $entityManager->persist($this->entity()); $entityManager->flush(); return $this->act(); } public function entity(): PostEntity { return $this->origin->entity()->approved(); } public function act(): Post { $this->origin->act(); /** * new state subsequent workflow code */ return new Done($this); } } ‘Disabling’ decorator (ensures workflow is ran only once by an object) class Done implements Post { private $origin; public function __construct( Post $origin ) { $this->origin = $origin; } public function save(EntityManagerInterface $entityManager): Post { return $this; } public function entity(): PostEntity { return $this->origin->entity(); } public function act(): Post { return $this; } } Entities filtering from database or memory Filter class use Doctrine\ORM\QueryBuilder; class Approved implements Filter { public function query(QueryBuilder $queryBuilder): QueryBuilder { return $queryBuilder ->andWhere('p.status = :status') ->setParameter('status', (new PostStatuses())->approved() ); } public function item(Post $item): bool { return $item->entity()->isApproved(); } } Array entities source class ArrayPosts implements Posts { private $items; private $filters; public function __construct( array $items ) { $this->items = $items; $this->filters = []; } public function toArray(): array { return array_filter( $this->items, function (Post $item) { return array_reduce( $this->filters, function(bool $take, Filter $filter) use ($item) { return $take && $filter->item($item); }, true ); } ); } public function filter(Filter $filter): Posts { $new = clone $this; $new->filters[] = $filter; return $new; } } Database entities source class DatabasePosts implements Posts { private $entityManager; private $filters; public function __construct( EntityManagerInterface $entityManagerInterface ) { $this->entityManager = $entityManagerInterface; $this->filters = []; } public function toArray(): array { $qb = $this->entityManager->createQueryBuilder(); $qb->select('p')->from(PostEntity::class, 'p'); $qb = array_reduce( $this->filters, function (QueryBuilder $queryBuilder, Filter $filter) { return $filter->query($queryBuilder); }, $qb ); return $qb ->getQuery() ->getResult(); } public function filter(Filter $filter): Posts { $new = clone $this; $new->filters[] = $filter; return $new; } } "><meta property="og:locale" content="en-us"><meta property="og:type" content="article"><meta property="article:section" content="posts"><meta property="article:published_time" content="2024-12-10T14:26:42+01:00"><meta property="article:modified_time" content="2024-12-10T14:26:42+01:00"><meta property="article:tag" content="Dev"><meta property="article:tag" content="Doctrine"><meta property="article:tag" content="Symfony"><meta name=twitter:card content="summary"><meta name=twitter:title content="My Doctrine Design Patterns"><meta name=twitter:description content="My custom Doctrine Design Patterns
+Entity workflow control with Decorators
+ORM entity
+use Doctrine\ORM\EntityManagerInterface;
+
+class PostEntity implements Post
+{
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager->persist($this->entity());
+        $entityManager->flush();
+
+        return $this->act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this;
+    }
+
+    public function act(): Post
+    {        
+        return new Done($this);
+    }
+}
+Workflow State Decorator
+
+class Approved implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this->origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager->persist($this->entity());
+        $entityManager->flush();
+
+        return $this->act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this->origin->entity()->approved();
+    }
+
+    public function act(): Post
+    {
+        $this->origin->act();
+        /**
+        * new state subsequent workflow code
+        */
+
+        return new Done($this);
+    }
+}
+&lsquo;Disabling&rsquo; decorator (ensures workflow is ran only once by an object)
+
+class Done implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this->origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        return $this;
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this->origin->entity();
+    }
+
+    public function act(): Post
+    {
+        return $this;
+    }
+}
+Entities filtering from database or memory
+Filter class
+use Doctrine\ORM\QueryBuilder;
+
+class Approved implements Filter
+{
+    public function query(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder
+            ->andWhere('p.status = :status')
+            ->setParameter('status', (new PostStatuses())->approved() );
+    }
+
+    public function item(Post $item): bool
+    {
+        return $item->entity()->isApproved();
+    }
+}
+Array entities source
+
+class ArrayPosts implements Posts
+{
+    private $items;
+    private $filters;
+
+    public function __construct(
+        array $items
+    ) {
+       $this->items = $items; 
+       $this->filters = [];
+    }
+
+    public function toArray(): array
+    {
+        return array_filter(
+            $this->items,
+            function (Post $item)
+            {
+                return array_reduce(
+                    $this->filters,
+                    function(bool $take, Filter $filter) use ($item)
+                    {
+                        return $take && $filter->item($item);
+                    },
+                    true
+                );
+            }
+        );
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new->filters[] = $filter;
+
+        return $new;
+    }
+}
+Database entities source
+
+class DatabasePosts implements Posts
+{
+    private $entityManager;
+    private $filters;
+
+    public function __construct(
+        EntityManagerInterface $entityManagerInterface
+    ) {
+       $this->entityManager = $entityManagerInterface; 
+       $this->filters = [];
+    }
+
+    public function toArray(): array
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('p')->from(PostEntity::class, 'p');
+
+        $qb = array_reduce(
+            $this->filters,
+            function (QueryBuilder $queryBuilder, Filter $filter) {
+                return $filter->query($queryBuilder);
+            },
+            $qb
+        );
+
+        return $qb
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new->filters[] = $filter;
+
+        return $new;
+    }
+}
+"><script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Posts","item":"https://vinosa.github.io/blog/posts/"},{"@type":"ListItem","position":2,"name":"My Doctrine Design Patterns","item":"https://vinosa.github.io/blog/posts/doctrine-design-patterns/"}]}</script><script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"My Doctrine Design Patterns","name":"My Doctrine Design Patterns","description":"My custom Doctrine Design Patterns Entity workflow control with Decorators ORM entity use Doctrine\\ORM\\EntityManagerInterface; class PostEntity implements Post { public function save(EntityManagerInterface $entityManager): Post { $entityManager-\u0026gt;persist($this-\u0026gt;entity()); $entityManager-\u0026gt;flush(); return $this-\u0026gt;act(); } public function entity(): PostEntity { return $this; } public function act(): Post { return new Done($this); } } Workflow State Decorator class Approved implements Post { private $origin; public function __construct( Post $origin ) { $this-\u0026gt;origin = $origin; } public function save(EntityManagerInterface $entityManager): Post { $entityManager-\u0026gt;persist($this-\u0026gt;entity()); $entityManager-\u0026gt;flush(); return $this-\u0026gt;act(); } public function entity(): PostEntity { return $this-\u0026gt;origin-\u0026gt;entity()-\u0026gt;approved(); } public function act(): Post { $this-\u0026gt;origin-\u0026gt;act(); /** * new state subsequent workflow code */ return new Done($this); } } \u0026lsquo;Disabling\u0026rsquo; decorator (ensures workflow is ran only once by an object) class Done implements Post { private $origin; public function __construct( Post $origin ) { $this-\u0026gt;origin = $origin; } public function save(EntityManagerInterface $entityManager): Post { return $this; } public function entity(): PostEntity { return $this-\u0026gt;origin-\u0026gt;entity(); } public function act(): Post { return $this; } } Entities filtering from database or memory Filter class use Doctrine\\ORM\\QueryBuilder; class Approved implements Filter { public function query(QueryBuilder $queryBuilder): QueryBuilder { return $queryBuilder -\u0026gt;andWhere(\u0026#39;p.status = :status\u0026#39;) -\u0026gt;setParameter(\u0026#39;status\u0026#39;, (new PostStatuses())-\u0026gt;approved() ); } public function item(Post $item): bool { return $item-\u0026gt;entity()-\u0026gt;isApproved(); } } Array entities source class ArrayPosts implements Posts { private $items; private $filters; public function __construct( array $items ) { $this-\u0026gt;items = $items; $this-\u0026gt;filters = []; } public function toArray(): array { return array_filter( $this-\u0026gt;items, function (Post $item) { return array_reduce( $this-\u0026gt;filters, function(bool $take, Filter $filter) use ($item) { return $take \u0026amp;\u0026amp; $filter-\u0026gt;item($item); }, true ); } ); } public function filter(Filter $filter): Posts { $new = clone $this; $new-\u0026gt;filters[] = $filter; return $new; } } Database entities source class DatabasePosts implements Posts { private $entityManager; private $filters; public function __construct( EntityManagerInterface $entityManagerInterface ) { $this-\u0026gt;entityManager = $entityManagerInterface; $this-\u0026gt;filters = []; } public function toArray(): array { $qb = $this-\u0026gt;entityManager-\u0026gt;createQueryBuilder(); $qb-\u0026gt;select(\u0026#39;p\u0026#39;)-\u0026gt;from(PostEntity::class, \u0026#39;p\u0026#39;); $qb = array_reduce( $this-\u0026gt;filters, function (QueryBuilder $queryBuilder, Filter $filter) { return $filter-\u0026gt;query($queryBuilder); }, $qb ); return $qb -\u0026gt;getQuery() -\u0026gt;getResult(); } public function filter(Filter $filter): Posts { $new = clone $this; $new-\u0026gt;filters[] = $filter; return $new; } } ","keywords":["dev","doctrine","symfony"],"articleBody":"My custom Doctrine Design Patterns Entity workflow control with Decorators ORM entity use Doctrine\\ORM\\EntityManagerInterface; class PostEntity implements Post { public function save(EntityManagerInterface $entityManager): Post { $entityManager-\u003epersist($this-\u003eentity()); $entityManager-\u003eflush(); return $this-\u003eact(); } public function entity(): PostEntity { return $this; } public function act(): Post { return new Done($this); } } Workflow State Decorator class Approved implements Post { private $origin; public function __construct( Post $origin ) { $this-\u003eorigin = $origin; } public function save(EntityManagerInterface $entityManager): Post { $entityManager-\u003epersist($this-\u003eentity()); $entityManager-\u003eflush(); return $this-\u003eact(); } public function entity(): PostEntity { return $this-\u003eorigin-\u003eentity()-\u003eapproved(); } public function act(): Post { $this-\u003eorigin-\u003eact(); /** * new state subsequent workflow code */ return new Done($this); } } ‘Disabling’ decorator (ensures workflow is ran only once by an object) class Done implements Post { private $origin; public function __construct( Post $origin ) { $this-\u003eorigin = $origin; } public function save(EntityManagerInterface $entityManager): Post { return $this; } public function entity(): PostEntity { return $this-\u003eorigin-\u003eentity(); } public function act(): Post { return $this; } } Entities filtering from database or memory Filter class use Doctrine\\ORM\\QueryBuilder; class Approved implements Filter { public function query(QueryBuilder $queryBuilder): QueryBuilder { return $queryBuilder -\u003eandWhere('p.status = :status') -\u003esetParameter('status', (new PostStatuses())-\u003eapproved() ); } public function item(Post $item): bool { return $item-\u003eentity()-\u003eisApproved(); } } Array entities source class ArrayPosts implements Posts { private $items; private $filters; public function __construct( array $items ) { $this-\u003eitems = $items; $this-\u003efilters = []; } public function toArray(): array { return array_filter( $this-\u003eitems, function (Post $item) { return array_reduce( $this-\u003efilters, function(bool $take, Filter $filter) use ($item) { return $take \u0026\u0026 $filter-\u003eitem($item); }, true ); } ); } public function filter(Filter $filter): Posts { $new = clone $this; $new-\u003efilters[] = $filter; return $new; } } Database entities source class DatabasePosts implements Posts { private $entityManager; private $filters; public function __construct( EntityManagerInterface $entityManagerInterface ) { $this-\u003eentityManager = $entityManagerInterface; $this-\u003efilters = []; } public function toArray(): array { $qb = $this-\u003eentityManager-\u003ecreateQueryBuilder(); $qb-\u003eselect('p')-\u003efrom(PostEntity::class, 'p'); $qb = array_reduce( $this-\u003efilters, function (QueryBuilder $queryBuilder, Filter $filter) { return $filter-\u003equery($queryBuilder); }, $qb ); return $qb -\u003egetQuery() -\u003egetResult(); } public function filter(Filter $filter): Posts { $new = clone $this; $new-\u003efilters[] = $filter; return $new; } } ","wordCount":"351","inLanguage":"en","datePublished":"2024-12-10T14:26:42+01:00","dateModified":"2024-12-10T14:26:42+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://vinosa.github.io/blog/posts/doctrine-design-patterns/"},"publisher":{"@type":"Organization","name":"Blog","logo":{"@type":"ImageObject","url":"https://vinosa.github.io/blog/favicon.ico"}}}</script></head><body id=top><script>localStorage.getItem("pref-theme")==="dark"?document.body.classList.add("dark"):localStorage.getItem("pref-theme")==="light"?document.body.classList.remove("dark"):window.matchMedia("(prefers-color-scheme: dark)").matches&&document.body.classList.add("dark")</script><header class=header><nav class=nav><div class=logo><a href=https://vinosa.github.io/blog/ accesskey=h title="Blog (Alt + H)">Blog</a><div class=logo-switches><button id=theme-toggle accesskey=t title="(Alt + T)"><svg id="moon" width="24" height="18" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><svg id="sun" width="24" height="18" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div><ul id=menu></ul></nav></header><main class=main><article class=post-single><header class=post-header><h1 class="post-title entry-hint-parent">My Doctrine Design Patterns</h1><div class=post-meta><span title='2024-12-10 14:26:42 +0100 +0100'>December 10, 2024</span></div></header><div class=post-content><h1 id=my-custom-doctrine-design-patterns>My custom Doctrine Design Patterns<a hidden class=anchor aria-hidden=true href=#my-custom-doctrine-design-patterns>#</a></h1><h2 id=entity-workflow-control-with-decorators>Entity workflow control with Decorators<a hidden class=anchor aria-hidden=true href=#entity-workflow-control-with-decorators>#</a></h2><h3 id=orm-entity>ORM entity<a hidden class=anchor aria-hidden=true href=#orm-entity>#</a></h3><pre tabindex=0><code>use Doctrine\ORM\EntityManagerInterface;
+
+class PostEntity implements Post
+{
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager-&gt;persist($this-&gt;entity());
+        $entityManager-&gt;flush();
+
+        return $this-&gt;act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this;
+    }
+
+    public function act(): Post
+    {        
+        return new Done($this);
+    }
+}
+</code></pre><h3 id=workflow-state-decorator>Workflow State Decorator<a hidden class=anchor aria-hidden=true href=#workflow-state-decorator>#</a></h3><pre tabindex=0><code>
+class Approved implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this-&gt;origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        $entityManager-&gt;persist($this-&gt;entity());
+        $entityManager-&gt;flush();
+
+        return $this-&gt;act();
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this-&gt;origin-&gt;entity()-&gt;approved();
+    }
+
+    public function act(): Post
+    {
+        $this-&gt;origin-&gt;act();
+        /**
+        * new state subsequent workflow code
+        */
+
+        return new Done($this);
+    }
+}
+</code></pre><h3 id=disabling-decorator-ensures-workflow-is-ran-only-once-by-an-object>&lsquo;Disabling&rsquo; decorator (ensures workflow is ran only once by an object)<a hidden class=anchor aria-hidden=true href=#disabling-decorator-ensures-workflow-is-ran-only-once-by-an-object>#</a></h3><pre tabindex=0><code>
+class Done implements Post
+{
+    private $origin;
+
+    public function __construct(
+        Post $origin
+    ) {
+        $this-&gt;origin = $origin;
+    }
+
+    public function save(EntityManagerInterface $entityManager): Post
+    {
+        return $this;
+    }
+
+    public function entity(): PostEntity
+    {
+        return $this-&gt;origin-&gt;entity();
+    }
+
+    public function act(): Post
+    {
+        return $this;
+    }
+}
+</code></pre><h2 id=entities-filtering-from-database-or-memory>Entities filtering from database or memory<a hidden class=anchor aria-hidden=true href=#entities-filtering-from-database-or-memory>#</a></h2><h3 id=filter-class>Filter class<a hidden class=anchor aria-hidden=true href=#filter-class>#</a></h3><pre tabindex=0><code>use Doctrine\ORM\QueryBuilder;
+
+class Approved implements Filter
+{
+    public function query(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder
+            -&gt;andWhere(&#39;p.status = :status&#39;)
+            -&gt;setParameter(&#39;status&#39;, (new PostStatuses())-&gt;approved() );
+    }
+
+    public function item(Post $item): bool
+    {
+        return $item-&gt;entity()-&gt;isApproved();
+    }
+}
+</code></pre><h3 id=array-entities-source>Array entities source<a hidden class=anchor aria-hidden=true href=#array-entities-source>#</a></h3><pre tabindex=0><code>
+class ArrayPosts implements Posts
+{
+    private $items;
+    private $filters;
+
+    public function __construct(
+        array $items
+    ) {
+       $this-&gt;items = $items; 
+       $this-&gt;filters = [];
+    }
+
+    public function toArray(): array
+    {
+        return array_filter(
+            $this-&gt;items,
+            function (Post $item)
+            {
+                return array_reduce(
+                    $this-&gt;filters,
+                    function(bool $take, Filter $filter) use ($item)
+                    {
+                        return $take &amp;&amp; $filter-&gt;item($item);
+                    },
+                    true
+                );
+            }
+        );
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new-&gt;filters[] = $filter;
+
+        return $new;
+    }
+}
+</code></pre><h3 id=database-entities-source>Database entities source<a hidden class=anchor aria-hidden=true href=#database-entities-source>#</a></h3><pre tabindex=0><code>
+class DatabasePosts implements Posts
+{
+    private $entityManager;
+    private $filters;
+
+    public function __construct(
+        EntityManagerInterface $entityManagerInterface
+    ) {
+       $this-&gt;entityManager = $entityManagerInterface; 
+       $this-&gt;filters = [];
+    }
+
+    public function toArray(): array
+    {
+        $qb = $this-&gt;entityManager-&gt;createQueryBuilder();
+        $qb-&gt;select(&#39;p&#39;)-&gt;from(PostEntity::class, &#39;p&#39;);
+
+        $qb = array_reduce(
+            $this-&gt;filters,
+            function (QueryBuilder $queryBuilder, Filter $filter) {
+                return $filter-&gt;query($queryBuilder);
+            },
+            $qb
+        );
+
+        return $qb
+            -&gt;getQuery()
+            -&gt;getResult();
+    }
+
+    public function filter(Filter $filter): Posts
+    {
+        $new = clone $this;
+        $new-&gt;filters[] = $filter;
+
+        return $new;
+    }
+}
+</code></pre></div><footer class=post-footer><ul class=post-tags><li><a href=https://vinosa.github.io/blog/tags/dev/>Dev</a></li><li><a href=https://vinosa.github.io/blog/tags/doctrine/>Doctrine</a></li><li><a href=https://vinosa.github.io/blog/tags/symfony/>Symfony</a></li></ul></footer></article></main><footer class=footer><span>&copy; 2024 <a href=https://vinosa.github.io/blog/>Blog</a></span> ·
+<span>Powered by
+<a href=https://gohugo.io/ rel="noopener noreferrer" target=_blank>Hugo</a> &
+        <a href=https://github.com/adityatelange/hugo-PaperMod/ rel=noopener target=_blank>PaperMod</a></span></footer><a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg>
+</a><script>let menu=document.getElementById("menu");menu&&(menu.scrollLeft=localStorage.getItem("menu-scroll-position"),menu.onscroll=function(){localStorage.setItem("menu-scroll-position",menu.scrollLeft)}),document.querySelectorAll('a[href^="#"]').forEach(e=>{e.addEventListener("click",function(e){e.preventDefault();var t=this.getAttribute("href").substr(1);window.matchMedia("(prefers-reduced-motion: reduce)").matches?document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView():document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView({behavior:"smooth"}),t==="top"?history.replaceState(null,null," "):history.pushState(null,null,`#${t}`)})})</script><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){document.body.scrollTop>800||document.documentElement.scrollTop>800?(mybutton.style.visibility="visible",mybutton.style.opacity="1"):(mybutton.style.visibility="hidden",mybutton.style.opacity="0")}</script><script>document.getElementById("theme-toggle").addEventListener("click",()=>{document.body.className.includes("dark")?(document.body.classList.remove("dark"),localStorage.setItem("pref-theme","light")):(document.body.classList.add("dark"),localStorage.setItem("pref-theme","dark"))})</script></body></html>
