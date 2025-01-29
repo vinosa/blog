@@ -35,7 +35,7 @@ class PostEntity implements Post
         return $this;
     }
 
-    public function act(): Post
+    public function done(): Post
     {        
         return new Done($this);
     }
@@ -46,12 +46,8 @@ class PostEntity implements Post
 
 class Approved implements Post
 {
-    private $origin;
-
-    public function __construct(
-        Post $origin
-    ) {
-        $this->origin = $origin;
+    public function __construct(private Post $origin)
+    {
     }
 
     public function save(EntityManagerInterface $entityManager): Post
@@ -67,9 +63,9 @@ class Approved implements Post
         return $this->origin->entity()->approved();
     }
 
-    public function act(): Post
+    public function done(): Post
     {
-        $this->origin->act();
+        $this->origin->done();
         /**
         * new state subsequent workflow code
         */
@@ -83,12 +79,8 @@ class Approved implements Post
 
 class Done implements Post
 {
-    private $origin;
-
-    public function __construct(
-        Post $origin
-    ) {
-        $this->origin = $origin;
+    public function __construct(private Post $origin) 
+    {
     }
 
     public function save(EntityManagerInterface $entityManager): Post
@@ -101,7 +93,7 @@ class Done implements Post
         return $this->origin->entity();
     }
 
-    public function act(): Post
+    public function done(): Post
     {
         return $this;
     }
@@ -124,7 +116,7 @@ class Approved implements Filter
             ->setParameter('status', (new PostStatuses())->approved() );
     }
 
-    public function item(Post $item): bool
+    public function take(Post $item): bool
     {
         return $item->entity()->isApproved();
     }
@@ -137,35 +129,22 @@ class Approved implements Filter
 
 class ArrayPosts implements Posts
 {
-    private $items;
     private $filters;
 
-    public function __construct(
-        array $items
-    ) {
-       $this->items = $items; 
+    public function __construct(private array $items) 
+    { 
        $this->filters = [];
     }
 
     public function toArray(): array
     {
         return array_filter(
-            $this->items,
-            function (Post $item)
-            {
-                return array_reduce(
-                    $this->filters,
-                    function(bool $take, Filter $filter) use ($item)
-                    {
-                        return $take && $filter->item($item);
-                    },
-                    true
-                );
-            }
+            $this->items, 
+            fn(Post $item) => array_reduce($this->filters, fn(bool $take, Filter $filter) => $take && $filter->take($item), true)
         );
     }
 
-    public function filter(Filter $filter): Posts
+    public function take(Filter $filter): Posts
     {
         $new = clone $this;
         $new->filters[] = $filter;
@@ -181,13 +160,10 @@ class ArrayPosts implements Posts
 
 class DatabasePosts implements Posts
 {
-    private $entityManager;
     private $filters;
 
-    public function __construct(
-        EntityManagerInterface $entityManagerInterface
-    ) {
-       $this->entityManager = $entityManagerInterface; 
+    public function __construct(private EntityManagerInterface $entityManager)
+    { 
        $this->filters = [];
     }
 
@@ -196,20 +172,13 @@ class DatabasePosts implements Posts
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('p')->from(PostEntity::class, 'p');
 
-        $qb = array_reduce(
-            $this->filters,
-            function (QueryBuilder $queryBuilder, Filter $filter) {
-                return $filter->query($queryBuilder);
-            },
-            $qb
-        );
+        $qb = array_reduce($this->filters, fn(QueryBuilder $queryBuilder, Filter $filter) => $filter->query($queryBuilder), $qb);
 
-        return $qb
-            ->getQuery()
+        return $qb->getQuery()
             ->getResult();
     }
 
-    public function filter(Filter $filter): Posts
+    public function take(Filter $filter): Posts
     {
         $new = clone $this;
         $new->filters[] = $filter;
