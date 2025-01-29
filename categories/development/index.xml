@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Development on Blog</title><link>https://vinosa.github.io/blog/categories/development/</link><description>Recent content in Development on Blog</description><generator>Hugo -- 0.139.4</generator><language>en-us</language><lastBuildDate>Tue, 10 Dec 2024 14:26:42 +0100</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/development/index.xml" rel="self" type="application/rss+xml"/><item><title>My Doctrine Design Patterns</title><link>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</link><pubDate>Tue, 10 Dec 2024 14:26:42 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</guid><description>&lt;h1 id="my-custom-doctrine-design-patterns">My custom Doctrine Design Patterns&lt;/h1>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Development on Blog</title><link>https://vinosa.github.io/blog/categories/development/</link><description>Recent content in Development on Blog</description><generator>Hugo -- 0.142.0</generator><language>en-us</language><lastBuildDate>Tue, 10 Dec 2024 14:26:42 +0100</lastBuildDate><atom:link href="https://vinosa.github.io/blog/categories/development/index.xml" rel="self" type="application/rss+xml"/><item><title>My Doctrine Design Patterns</title><link>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</link><pubDate>Tue, 10 Dec 2024 14:26:42 +0100</pubDate><guid>https://vinosa.github.io/blog/posts/doctrine-design-patterns/</guid><description>&lt;h1 id="my-custom-doctrine-design-patterns">My custom Doctrine Design Patterns&lt;/h1>
 &lt;h2 id="entity-workflow-control-with-decorators">Entity workflow control with Decorators&lt;/h2>
 &lt;h3 id="orm-entity">ORM entity&lt;/h3>
 &lt;pre tabindex="0">&lt;code>use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +14,7 @@ public function entity(): PostEntity
 {
 return $this;
 }
-public function act(): Post
+public function done(): Post
 {
 return new Done($this);
 }
@@ -23,11 +23,8 @@ return new Done($this);
 &lt;pre tabindex="0">&lt;code>
 class Approved implements Post
 {
-private $origin;
-public function __construct(
-Post $origin
-) {
-$this-&amp;gt;origin = $origin;
+public function __construct(private Post $origin)
+{
 }
 public function save(EntityManagerInterface $entityManager): Post
 {
@@ -39,9 +36,9 @@ public function entity(): PostEntity
 {
 return $this-&amp;gt;origin-&amp;gt;entity()-&amp;gt;approved();
 }
-public function act(): Post
+public function done(): Post
 {
-$this-&amp;gt;origin-&amp;gt;act();
+$this-&amp;gt;origin-&amp;gt;done();
 /**
 * new state subsequent workflow code
 */
@@ -52,11 +49,8 @@ return new Done($this);
 &lt;pre tabindex="0">&lt;code>
 class Done implements Post
 {
-private $origin;
-public function __construct(
-Post $origin
-) {
-$this-&amp;gt;origin = $origin;
+public function __construct(private Post $origin)
+{
 }
 public function save(EntityManagerInterface $entityManager): Post
 {
@@ -66,7 +60,7 @@ public function entity(): PostEntity
 {
 return $this-&amp;gt;origin-&amp;gt;entity();
 }
-public function act(): Post
+public function done(): Post
 {
 return $this;
 }
@@ -82,7 +76,7 @@ return $queryBuilder
 -&amp;gt;andWhere(&amp;#39;p.status = :status&amp;#39;)
 -&amp;gt;setParameter(&amp;#39;status&amp;#39;, (new PostStatuses())-&amp;gt;approved() );
 }
-public function item(Post $item): bool
+public function take(Post $item): bool
 {
 return $item-&amp;gt;entity()-&amp;gt;isApproved();
 }
@@ -91,32 +85,19 @@ return $item-&amp;gt;entity()-&amp;gt;isApproved();
 &lt;pre tabindex="0">&lt;code>
 class ArrayPosts implements Posts
 {
-private $items;
 private $filters;
-public function __construct(
-array $items
-) {
-$this-&amp;gt;items = $items;
+public function __construct(private array $items)
+{
 $this-&amp;gt;filters = [];
 }
 public function toArray(): array
 {
 return array_filter(
 $this-&amp;gt;items,
-function (Post $item)
-{
-return array_reduce(
-$this-&amp;gt;filters,
-function(bool $take, Filter $filter) use ($item)
-{
-return $take &amp;amp;&amp;amp; $filter-&amp;gt;item($item);
-},
-true
+fn(Post $item) =&amp;gt; array_reduce($this-&amp;gt;filters, fn(bool $take, Filter $filter) =&amp;gt; $take &amp;amp;&amp;amp; $filter-&amp;gt;take($item), true)
 );
 }
-);
-}
-public function filter(Filter $filter): Posts
+public function take(Filter $filter): Posts
 {
 $new = clone $this;
 $new-&amp;gt;filters[] = $filter;
@@ -127,30 +108,20 @@ return $new;
 &lt;pre tabindex="0">&lt;code>
 class DatabasePosts implements Posts
 {
-private $entityManager;
 private $filters;
-public function __construct(
-EntityManagerInterface $entityManagerInterface
-) {
-$this-&amp;gt;entityManager = $entityManagerInterface;
+public function __construct(private EntityManagerInterface $entityManager)
+{
 $this-&amp;gt;filters = [];
 }
 public function toArray(): array
 {
 $qb = $this-&amp;gt;entityManager-&amp;gt;createQueryBuilder();
 $qb-&amp;gt;select(&amp;#39;p&amp;#39;)-&amp;gt;from(PostEntity::class, &amp;#39;p&amp;#39;);
-$qb = array_reduce(
-$this-&amp;gt;filters,
-function (QueryBuilder $queryBuilder, Filter $filter) {
-return $filter-&amp;gt;query($queryBuilder);
-},
-$qb
-);
-return $qb
--&amp;gt;getQuery()
+$qb = array_reduce($this-&amp;gt;filters, fn(QueryBuilder $queryBuilder, Filter $filter) =&amp;gt; $filter-&amp;gt;query($queryBuilder), $qb);
+return $qb-&amp;gt;getQuery()
 -&amp;gt;getResult();
 }
-public function filter(Filter $filter): Posts
+public function take(Filter $filter): Posts
 {
 $new = clone $this;
 $new-&amp;gt;filters[] = $filter;
